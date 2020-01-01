@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.dao.StudentDao" >
+
+    <insert id="addStudent">
+        insert into online_test_system.student(account, password, real_name, sex)
+        VALUE (#{student.account},#{student.password},#{student.realName},#{student.sex});
+    </insert>
+
+    <insert id="addExamQuestion">
+        insert into online_test_system.mid_exam_student_question(mesid, qid, answers) values
+        <foreach collection="ms" item="item" index="index" separator=",">
+            (#{item.mesid},#{item.qid},#{item.answers})
+        </foreach>
+    </insert>
+
+    <update id="markExamStart">
+        update online_test_system.mid_exam_student as mes
+            set mes.start_exam_time = now()
+        where mes.eid = #{exam.id}
+          and mes.sid = #{student.id}
+          and mes.start_exam_time is null;
+    </update>
+
+    <update id="markExamStudentScore">
+        update online_test_system.mid_exam_student mes
+        set mes.score = #{m.score}
+        where mes.id = #{m.id};
+    </update>
+
+    <delete id="removeExamQuestion">
+        delete from online_test_system.mid_exam_student_question mesq
+        where mesq.mesid = #{mid.id};
+    </delete>
+
+    <select id="searchStudent" resultType="com.entity.Student">
+        select id, account, password, real_name, sex
+            from online_test_system.student
+            where account = #{student.account}
+              and password= #{student.password};
+    </select>
+
+    <select id="searchJointClass" resultMap="midClassStudent">
+        select c.id,c.name, c.class_code,t.id,t.account,t.sex,t.real_name
+        from (select cid from online_test_system.mid_class_student where sid = #{student.id}) as m
+        join online_test_system.class c on c.id = m.cid
+        join online_test_system.teacher t on t.id = c.tid;
+    </select>
+
+    <select id="searchCurrentExams" resultType="com.entity.Exam">
+        select e.id, e.release_time, e.start_time, e.duration, e.name, e.max_submit,e.tpid,e.sjid,e.cid
+        from (select mes.eid from online_test_system.mid_exam_student as mes where mes.sid=1) as m
+        left join online_test_system.exam as e on m.eid = e.id
+        where e.start_time &lt; now()and now() &lt; e.release_time;
+    </select>
+
+    <select id="searchHistoryExams" resultType="com.entity.Exam">
+        select e.id, e.release_time, e.start_time, e.duration, e.name, e.max_submit,e.tpid,e.sjid,e.cid
+        from (select mes.eid from online_test_system.mid_exam_student as mes where mes.sid=1) as m
+                 left join online_test_system.exam as e on m.eid = e.id
+        where  now() &gt; e.release_time;
+    </select>
+
+    <select id="searchWrongQuestionLists" resultType="com.entity.Exam">
+        select e.id,e.name,e.cid,e.sjid,e.tpid,e.max_submit,e.duration,e.start_time,e.release_time from
+            (select mes.eid, mes.id ,mes.score from online_test_system.mid_exam_student as mes where mes.sid = #{student.id}) as m
+                join online_test_system.exam as e on e.id = m.eid
+                join online_test_system.mid_exam_student_question as mesq on mesq.mesid = m.id
+                join online_test_system.question q on mesq.qid = q.id
+        where q.answers = mesq.answers or mesq.answers is null or mes.score is null
+        group by e.id;
+    </select>
+
+    <select id="searchExamInfo" resultMap="testPaper">
+        select m.id,m.name,m.sjid,m.tid,qb.id qbid,qb.sjid,qb.name,qb.type,q.id qid,q.tid,q.type,q.sjid,q.stem,q.options
+        from (select id, name, sjid, tid from online_test_system.test_paper where id = #{exam.tpid}) as m
+                          join online_test_system.mid_tpaper_qbank as mtq on m.id = mtq.tpid
+                          join online_test_system.question_bank qb on mtq.qbid = qb.id
+                          join online_test_system.mid_qbank_question mqq on qb.id = mqq.qbid
+                          join online_test_system.question q on mqq.qid = q.id;
+    </select>
+
+    <select id="judgement" resultMap="testPaper">
+        select m.id,m.name,m.sjid,m.tid,
+               qb.id qbid,qb.sjid,qb.name,qb.type,q.id qid,q.tid,q.type,q.sjid,q.stem,q.options,q.answers,
+               mtq.question_score,mtq.judge_type
+        from (select id, name, sjid, tid from online_test_system.test_paper where id = #{exam.tpid}) as m
+                 join online_test_system.mid_tpaper_qbank as mtq on m.id = mtq.tpid
+                 join online_test_system.question_bank qb on mtq.qbid = qb.id
+                 join online_test_system.mid_qbank_question mqq on qb.id = mqq.qbid
+                 join online_test_system.question q on mqq.qid = q.id;
+    </select>
+
+    <select id="searchExamWithId" resultType="com.entity.Exam">
+        select id, name, sjid, cid, tpid, start_time, release_time, duration, max_submit, tid
+        from online_test_system.exam
+        where id = #{exam.id};
+    </select>
+
+    <resultMap id="testPaperJudgement" type="com.entity.TestPaper">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="sjid" column="sjid"/>
+        <result property="tid" column="tid"/>
+        <collection property="questionBanks" ofType="com.entity.QuestionBank" javaType="java.util.List">
+            <id column="qbid" property="id"/>
+            <result property="name" column="name"/>
+            <result property="sjid" column="sjid"/>
+            <result property="type" column="type"/>
+            <result property="questionsScore" column="question_score"/>
+            <result property="judgeType" column="judge_type"/>
+            <collection property="questions" ofType="com.entity.Question" javaType="java.util.List">
+                <id property="id" column="qid"/>
+                <result property="type" column="type"/>
+                <result property="sjid" column="sjid"/>
+                <result property="stem" column="stem"/>
+                <result property="options" column="options"/>
+                <result property="answers" column="answers"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <select id="searchTestedExams" resultType="com.entity.Exam">
+        select e.id,e.name,e.sjid,e.tpid,e.release_time,e.start_time,e.duration,e.max_submit,e.cid from
+            online_test_system.mid_exam_student as mes
+                join online_test_system.exam as e on mes.eid = e.id and mes.sid = #{student.id}
+        where mes.score is not null;
+    </select>
+
+    <select id="searchWrongQuestionList" resultMap="testPaper">
+        select tp.id,tp.name,tp.sjid,tp.tid,
+               qb.id qbid,qb.name,qb.type,
+               q.id qid,q.stem,q.answers,q.`explain`
+        from online_test_system.test_paper tp
+                 join online_test_system.exam e on tp.id = e.tpid and e.id = #{exam.id}
+                 join online_test_system.mid_exam_student mes on e.id = mes.eid and mes.sid = #{student.id}
+                 join online_test_system.mid_tpaper_qbank mtq on tp.id = mtq.tpid
+                 join online_test_system.question_bank qb on mtq.qbid = qb.id
+                 join online_test_system.mid_qbank_question mqq on qb.id = mqq.qbid
+                 join online_test_system.question q on mqq.qid = q.id
+                 join online_test_system.mid_exam_student_question mesq on q.id = mesq.qid and mesq.mesid = mes.id
+        where mesq.answers != q.answers or mesq.answers is null;
+    </select>
+
+    <resultMap id="testPaper" type="com.entity.TestPaper">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="sjid" column="sjid"/>
+        <result property="tid" column="tid"/>
+        <collection property="questionBanks" ofType="com.entity.QuestionBank" javaType="java.util.List">
+            <id column="qbid" property="id"/>
+            <result property="name" column="name"/>
+            <result property="sjid" column="sjid"/>
+            <result property="type" column="type"/>
+            <collection property="questions" ofType="com.entity.Question" javaType="java.util.List">
+                <id property="id" column="qid"/>
+                <result property="type" column="type"/>
+                <result property="sjid" column="sjid"/>
+                <result property="stem" column="stem"/>
+                <result property="options" column="options"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <resultMap id="testPaperW" type="com.entity.TestPaper">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="sjid" column="sjid"/>
+        <result property="tid" column="tid"/>
+        <collection property="questionBanks" ofType="com.entity.QuestionBank" javaType="java.util.List">
+            <id column="qbid" property="id"/>
+            <result property="name" column="name"/>
+            <result property="sjid" column="sjid"/>
+            <result property="type" column="type"/>
+            <collection property="questions" ofType="com.entity.Question" javaType="java.util.List">
+                <id property="id" column="qid"/>
+                <result property="type" column="type"/>
+                <result property="sjid" column="sjid"/>
+                <result property="stem" column="stem"/>
+                <result property="options" column="options"/>
+                <result property="answers" column="answer"/>
+                <result property="explain" column="`explain`"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <resultMap id="midClassStudent" type="com.entity.Class" autoMapping="true">
+        <association property="teacher" javaType="com.entity.Teacher"  column="tid" autoMapping="true"/>
+    </resultMap>
+
+</mapper>

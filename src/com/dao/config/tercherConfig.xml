@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.dao.TeacherDao">
+
+    <insert id="register">
+        insert into online_test_system.teacher(account, password, real_name, sex)
+        value(#{teacher.account},#{teacher.password},#{teacher.realName},#{teacher.sex});
+    </insert>
+
+    <insert id="addStudentToClass">
+        insert into online_test_system.mid_class_student(cid, sid) values
+        <foreach collection="midList" item="item" index="index" separator=",">
+            ( #{item.cid},#{item.sid})
+        </foreach>
+    </insert>
+
+    <insert id="addClass">
+        insert into online_test_system.class(name, class_code, tid)
+        value(#{class.name},#{class.classCode},#{teacher.id});
+    </insert>
+
+    <insert id="addQuestions">
+        insert into online_test_system.question(stem, `explain`, type, sjid, options, answers, tid) values
+        <foreach collection="questions" item="item" index="index" separator=",">
+            (#{item.stem},#{item.explain},#{item.type},#{item.sjid},#{item.options},#{item.answers},#{teacher.id})
+        </foreach>
+    </insert>
+
+    <insert id="addExam">
+        insert into online_test_system.exam(name, sjid, cid, tpid, start_time, release_time, duration, max_submit, tid)
+        value(#{exam.name},#{exam.sjid},#{exam.cid},#{exam.tpid},#{exam.startTime},#{exam.releaseTime},#{exam.duration},#{exam.maxSubmit},#{teacher.id});
+    </insert>
+
+    <insert id="bindTpWithQb">
+        insert into online_test_system.mid_tpaper_qbank(tpid, qbid) values
+        <foreach collection="ms" index="index" item="item" separator=",">
+            (#{item.tpid},#{item.qbid})
+        </foreach>
+    </insert>
+
+    <insert id="bindQbWithQuestion">
+        insert into online_test_system.mid_qbank_question(qbid, qid) VALUES
+        <foreach collection="ms" item="item" index="index" separator=",">
+            (#{item.qbid},#{item.qid})
+        </foreach>
+    </insert>
+
+    <insert id="bindExamWithStudent">
+        insert into online_test_system.mid_exam_student(eid, sid) values
+        <foreach collection="ss" item="item" index="index" separator=",">
+            (#{exam.id},#{item.id})
+        </foreach>
+    </insert>
+
+    <delete id="removeQuestionBank">
+        delete from online_test_system.question_bank
+        where id = #{qb.id} and tid =#{teacher.id};
+    </delete>
+
+    <delete id="removeQuestion">
+        delete from online_test_system.question
+        where id = #{question.id} and tid = #{teacher.id};
+    </delete>
+
+    <delete id="removeExam">
+        delete from online_test_system.exam e
+        where e.id = #{exam.id} and e.tid = #{teacher.id};
+    </delete>
+
+    <delete id="removeTestPaper">
+        delete from online_test_system.test_paper tp
+        where tp.id = #{testPaper.id} and tp.tid = #{teacher.id};
+    </delete>
+
+    <select id="searchTeacher" resultType="com.entity.Teacher">
+        select t.account,t.id,t.real_name,t.sex from online_test_system.teacher as t
+        where t.account = #{teacher.account} and t.password = #{teacher.password};
+    </select>
+
+    <select id="searchCreatedClass" resultType="com.entity.Class">
+        select id, name, class_code, tid from online_test_system.class
+        where tid = #{teacher.id};
+    </select>
+
+    <select id="searchClassmates" resultMap="class">
+        select c.id,c.tid,c.name,c.class_code,
+                s.id sid,s.sex,s.real_name,s.account
+        from online_test_system.class c
+        join online_test_system.mid_class_student mcs on c.id = mcs.cid
+        join online_test_system.student s on mcs.sid = s.id
+        where c.id = #{class.id} and c.tid = #{teacher.id};
+    </select>
+
+    <select id="searchClassExams" resultType="com.entity.Exam">
+        select e.id,e.name,e.sjid,e.cid,e.max_submit,e.duration,e.start_time,e.release_time
+        from online_test_system.exam e
+        join online_test_system.class c on e.cid = c.id
+        where c.id = #{class.id} and c.tid = #{teacher.id};
+    </select>
+
+    <select id="searchCreatedQuestionBank" resultType="com.entity.QuestionBank">
+        select qb.id, qb.name, qb.type, qb.tid, qb.sjid from online_test_system.question_bank qb
+        where qb.tid = #{teacher.id};
+    </select>
+
+    <select id="searchQuestionsOfQB" resultType="com.entity.Question">
+        select q.id,q.tid,q.type,q.sjid,q.`explain`,q.answers,q.stem,q.options
+        from online_test_system.question_bank qb
+        join online_test_system.mid_qbank_question mqq on qb.id = mqq.qbid
+        join online_test_system.question q on mqq.qid = q.id
+        where qb.id = #{qb.id} and qb.tid = #{teacher.id};
+    </select>
+
+    <select id="searchExams" resultType="com.entity.Exam">
+        select e.id,e.sjid,e.release_time,e.start_time,e.duration,e.max_submit,e.cid,e.name,e.tpid, e.tid
+        from online_test_system.exam e
+        where e.tid = #{teacher.id};
+    </select>
+
+    <select id="searchTestPapers" resultType="com.entity.TestPaper">
+        select id, name, sjid, tid
+        from online_test_system.test_paper
+        where tid = #{teacher.id};
+    </select>
+
+    <select id="searchQuestionBanksWithType" resultType="com.entity.QuestionBank">
+        select qb.id,qb.type,qb.tid,qb.name,qb.sjid from online_test_system.question_bank qb
+        where qb.type = #{qb.type} and qb.tid = #{teacher.id};
+    </select>
+
+    <resultMap id="class" type="com.entity.Class">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="classCode" column="class_code"/>
+        <collection property="studentList" ofType="com.entity.Student">
+            <id property="id" column="sid"/>
+            <result property="account" column="account"/>
+            <result property="sex" column="sex"/>
+            <result property="realName" column="real_name"/>
+        </collection>
+    </resultMap>
+
+
+</mapper>
