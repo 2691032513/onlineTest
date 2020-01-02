@@ -51,4 +51,8 @@ public interface TeacherDao {
     int bindQbWithQuestion(@Param("ms") List<MidQbankQuestion> midQbankQuestions, @Param("teacher") Teacher teacher);
 
     int bindExamWithStudent(@Param("ss") List<Student> students, @Param("exam") Exam exam);
+
+    int addTestPaper(@Param("tp") TestPaper testPaper,@Param("t") Teacher teacher);
+
+    int addQuestionBank(@Param("qb") QuestionBank questionBank, @Param("t") Teacher teacher);
 }

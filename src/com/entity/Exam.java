@@ -11,7 +11,7 @@ public class Exam {
   private long tpid;
   private java.sql.Timestamp startTime;
   private java.sql.Timestamp releaseTime;
-  private java.sql.Time duration;
+  private java.sql.Timestamp duration;
   private long maxSubmit;
   private TestPaper testPaper;
 
@@ -86,11 +86,11 @@ public class Exam {
   }
 
 
-  public java.sql.Time getDuration() {
+  public java.sql.Timestamp getDuration() {
     return duration;
   }
 
-  public void setDuration(java.sql.Time duration) {
+  public void setDuration(java.sql.Timestamp duration) {
     this.duration = duration;
   }
 

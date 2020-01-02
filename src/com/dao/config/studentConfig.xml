@@ -5,7 +5,7 @@
 
     <insert id="addStudent">
         insert into online_test_system.student(account, password, real_name, sex)
-        VALUE (#{student.account},#{student.password},#{student.realName},#{student.sex});
+        VALUE (#{student.account},#{student.password},#{student.account},"男");
     </insert>
 
     <insert id="addExamQuestion">

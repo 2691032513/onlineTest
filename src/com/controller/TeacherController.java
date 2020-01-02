@@ -169,4 +169,18 @@ public class TeacherController {
     }
 
 
+    @RequestMapping("createTestPaper")
+    @ResponseBody
+    public boolean createTestPaper(TestPaper testPaper, HttpSession session){
+        Teacher teacher = (Teacher) session.getAttribute("teacher");
+        return teacherService.addTestPaper(testPaper,teacher);
+    }
+
+    @RequestMapping("createQuestionBank")
+    @ResponseBody
+    public boolean createQuestionBank(QuestionBank questionBank,HttpSession session){
+        Teacher teacher = (Teacher) session.getAttribute("teacher");
+        return teacherService.addQuestionBank(questionBank,teacher);
+    }
+
 }

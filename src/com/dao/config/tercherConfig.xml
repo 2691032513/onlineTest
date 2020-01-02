@@ -7,7 +7,7 @@
 
     <insert id="register">
         insert into online_test_system.teacher(account, password, real_name, sex)
-        value(#{teacher.account},#{teacher.password},#{teacher.realName},#{teacher.sex});
+        value(#{teacher.account},#{teacher.password},#{teacher.account},"男");
     </insert>
 
     <insert id="addStudentToClass">
@@ -53,6 +53,14 @@
         <foreach collection="ss" item="item" index="index" separator=",">
             (#{exam.id},#{item.id})
         </foreach>
+    </insert>
+    <insert id="addTestPaper">
+        insert into online_test_system.test_paper(name, sjid, tid)
+        VALUE (#{tp.name},#{tp.sjid},#{t.id})
+    </insert>
+    <insert id="addQuestionBank">
+        insert into online_test_system.question_bank(name, type, tid, sjid)
+        value (#{qb.name},#{qb.type},#{t.id},#{qb.sjid});
     </insert>
 
     <delete id="removeQuestionBank">

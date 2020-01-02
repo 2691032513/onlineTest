@@ -45,4 +45,8 @@ public interface TeacherService {
     boolean bindTpWithQb(List<MidTpaperQbank> midTpaperQbanks, Teacher teacher);
 
     boolean bindQbWithQuestions(List<MidQbankQuestion> midQbankQuestions, Teacher teacher);
+
+    boolean addTestPaper(TestPaper testPaper, Teacher teacher);
+
+    boolean addQuestionBank(QuestionBank questionBank, Teacher teacher);
 }

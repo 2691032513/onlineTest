@@ -142,4 +142,14 @@ public class TeacherServiceImply implements TeacherService {
         return teacherDao.bindQbWithQuestion(midQbankQuestions,teacher)>0;
     }
 
+    @Override
+    public boolean addTestPaper(TestPaper testPaper, Teacher teacher) {
+        return teacherDao.addTestPaper(testPaper,teacher)>0;
+    }
+
+    @Override
+    public boolean addQuestionBank(QuestionBank questionBank, Teacher teacher) {
+        return teacherDao.addQuestionBank(questionBank,teacher)>0;
+    }
+
 }
